@@ -1,44 +1,28 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package org.apache.jmeter.reporters;
 
-import java.io.Serializable;
-import java.text.DecimalFormat;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.jmeter.control.TransactionController;
-import org.apache.jmeter.engine.util.NoThreadClone;
-import org.apache.jmeter.samplers.Remoteable;
-import org.apache.jmeter.samplers.SampleEvent;
-import org.apache.jmeter.samplers.SampleListener;
-import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.AbstractTestElement;
-import org.apache.jmeter.testelement.TestStateListener;
-import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jmeter.threads.JMeterContextService.ThreadCounts;
-import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jorphan.util.JOrphanUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+        /*     */ import java.io.PrintStream;
+        /*     */ import java.io.Serializable;
+        /*     */ import java.net.URISyntaxException;
+        /*     */ import java.text.DecimalFormat;
+        /*     */ import java.util.Iterator;
+        /*     */ import java.util.Map;
+        /*     */ import java.util.Map.Entry;
+        /*     */ import java.util.Set;
+        /*     */ import java.util.concurrent.ConcurrentHashMap;
+        /*     */ import org.apache.jmeter.control.TransactionController;
+        /*     */ import org.apache.jmeter.engine.util.NoThreadClone;
+        /*     */ import org.apache.jmeter.samplers.Remoteable;
+        /*     */ import org.apache.jmeter.samplers.SampleEvent;
+        /*     */ import org.apache.jmeter.samplers.SampleListener;
+        /*     */ import org.apache.jmeter.samplers.SampleResult;
+        /*     */ import org.apache.jmeter.testelement.AbstractTestElement;
+        /*     */ import org.apache.jmeter.testelement.TestStateListener;
+        /*     */ import org.apache.jmeter.threads.JMeterContextService;
+        /*     */ import org.apache.jmeter.threads.JMeterContextService.ThreadCounts;
+        /*     */ import org.apache.jmeter.util.JMeterUtils;
+        /*     */ import org.apache.jorphan.util.JOrphanUtils;
+        /*     */ import org.slf4j.Logger;
+        /*     */ import org.slf4j.LoggerFactory;
 
 /**
  * Generate a summary of the test run so far to the log file and/or standard
@@ -94,6 +78,7 @@ public class Summariser extends AbstractTestElement
      * Lock used to protect ACCUMULATORS update + INSTANCE_COUNT update
      */
     private static final Object LOCK = new Object();
+    private static boolean TOINFLUX = JMeterUtils.getPropDefault("summariser.influx.out.enabled", false);
 
     /*
      * This map allows summarisers with the same name to contribute to the same totals.
@@ -112,6 +97,8 @@ public class Summariser extends AbstractTestElement
 
     // Name of the accumulator. Set up by testStarted().
     private transient String myName;
+    /* 122 */   private InfluxMetricSender influxDB = null;
+    /* 123 */   private InfluxMetricCollector influxSampleCollector = null;
 
     /*
      * Constructor is initially called once for each occurrence in the test plan.
@@ -126,6 +113,14 @@ public class Summariser extends AbstractTestElement
             ACCUMULATORS.clear();
             INSTANCE_COUNT=0;
         }
+        if (TOINFLUX) {
+ try {
+this.influxDB = new InfluxMetricSender();
+ this.influxSampleCollector = new InfluxMetricCollector(this.influxDB.getProject(), this.influxDB.getSuite());
+  } catch (URISyntaxException e) {
+   TOINFLUX = false;
+ }
+   }
     }
 
     /**
@@ -179,16 +174,20 @@ public class Summariser extends AbstractTestElement
         SummariserRunningSample myDelta = null;
         SummariserRunningSample myTotal = null;
         boolean reportNow = false;
+        String lineProtocol = null;
 
         /*
          * Have we reached the reporting boundary?
          * Need to allow for a margin of error, otherwise can miss the slot.
          * Also need to check we've not hit the window already
          */
-        
+
         synchronized (myTotals) {
             if (s != null) {
                 myTotals.delta.addSample(s);
+                if (TOINFLUX) {
+                    this.influxSampleCollector.addSample(s);
+                    }
             }
 
             if ((now > myTotals.last + INTERVAL_WINDOW) && (now % INTERVAL <= INTERVAL_WINDOW)) {
@@ -199,15 +198,25 @@ public class Summariser extends AbstractTestElement
                 myTotals.moveDelta();
                 myTotal = new SummariserRunningSample(myTotals.total);
 
-                myTotals.last = now; // stop double-reporting
+                myTotals.last = now;
+                if (TOINFLUX) {
+                    lineProtocol = this.influxSampleCollector.getLineProtocol();
+                    }// stop double-reporting
             }
         }
         if (reportNow) {
             formatAndWriteToLog(myName, myDelta, "+");
+            if (TOINFLUX) {
+                /* 233 */         this.influxDB.sendIntervalMetric(myDelta);
+                /* 234 */         this.influxDB.sendSampleMetric(lineProtocol);
+                /*     */       }
 
             // Only if we have updated them
             if (myTotal != null && myDelta != null &&myTotal.getNumSamples() != myDelta.getNumSamples()) { // NOSONAR
                 formatAndWriteToLog(myName, myTotal, "=");
+                if (TOINFLUX) {
+                    /* 241 */           this.influxDB.sendTotalMetric(myTotal);
+                    /*     */         }
             }
         }
     }
@@ -314,6 +323,15 @@ public class Summariser extends AbstractTestElement
             }
             total.moveDelta(); // This will update the total endTime
             formatAndWriteToLog(name, total.total, "=");
+            if (TOINFLUX) {
+                /* 350 */         this.influxDB.sendTotalMetric(total.total);
+                /* 351 */         String lineProtocol = this.influxSampleCollector.getLineProtocol();
+                /* 352 */         this.influxDB.sendSampleMetric(lineProtocol);
+                /*     */
+                /*     */
+                /*     */
+                /* 356 */         this.influxDB.shutDown();
+                /*     */       }
         }
     }
 
