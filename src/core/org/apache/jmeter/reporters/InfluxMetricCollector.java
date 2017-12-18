@@ -8,11 +8,11 @@ class InfluxMetricCollector
 {
     private final StringBuilder samples;
     private final String suite;
-    private final String application;
+    private final String herculesrunid;
 
     public InfluxMetricCollector(String project, String suite)
     {
-        this.application = project;
+        this.herculesrunid = project;
         this.suite = suite;
         this.samples = new StringBuilder();
     }
@@ -23,7 +23,7 @@ class InfluxMetricCollector
 
         sb.append("samples");
 
-        sb.append(",application=").append(escapeTag(this.application));
+        sb.append(",herculesrunid=").append(escapeTag(this.herculesrunid));
 
         sb.append(",suite=").append(escapeTag(this.suite));
 
@@ -39,6 +39,10 @@ class InfluxMetricCollector
 
         sb.append(",responsecode=").append(escapeResponceCode(result.getResponseCode()));
 
+       // sb.append(",failuremessage=").append(escapeTag(result.getAssertionResults()));
+
+        sb.append(",responemessage=").append(escapeTag(result.getResponseMessage()));
+
         sb.append(" ").append("ath=").append(JMeterContextService.getThreadCounts().activeThreads);
 
         sb.append(",duration=").append(result.getTime());
@@ -46,6 +50,14 @@ class InfluxMetricCollector
         sb.append(",latency=").append(result.getLatency());
 
         sb.append(",bytes=").append(result.getBytesAsLong());
+
+        sb.append(",idletime=").append(result.getIdleTime());
+
+        sb.append(",connect=").append(result.getConnectTime());
+
+        sb.append(",grpthreads=").append(result.getGroupThreads());
+
+        sb.append(",allthreads=").append(result.getAllThreads());
 
         sb.append(" ").append(result.getTimeStamp()).append("000000");
 

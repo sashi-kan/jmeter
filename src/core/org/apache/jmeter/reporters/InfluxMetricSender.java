@@ -22,8 +22,8 @@ class InfluxMetricSender
     private static final int INFLUX_CONNECTION_TIMEOUT = JMeterUtils.getPropDefault("summariser.influx.connection.timeout", 5000);
     private static final int INFLUX_SOCKET_TIMEOUT = JMeterUtils.getPropDefault("summariser.influx.socket.timeout", 5000);
     private static final int INFLUX_REQUEST_TIMEOUT = JMeterUtils.getPropDefault("summariser.influx.request.timeout", 5000);
-    private static final String INFLUX_APPLICATION = JMeterUtils.getPropDefault("summariser.influx.application", "testAutomationGuru");
-    private static final String INFLUX_TEST_SUITE = JMeterUtils.getPropDefault("summariser.influx.application.suite", "testAutomationGuru");
+    private static final String INFLUX_HERCULESRUN = JMeterUtils.getPropDefault("summariser.influx.herculesrun", "hercules_run");
+    private static final String INFLUX_TEST_SUITE = JMeterUtils.getPropDefault("summariser.influx.herculestest", "jmeter_test");
     private static final String DELTA_MEASUREMENT = "delta,";
     private static final String TOTAL_MEASUREMENT = "total,";
     private static final String DECIMAL_FORMAT = "0.00";
@@ -44,7 +44,7 @@ class InfluxMetricSender
 
     public String getProject()
     {
-        return INFLUX_APPLICATION;
+        return INFLUX_HERCULESRUN;
     }
 
     public String getSuite()
@@ -105,12 +105,12 @@ class InfluxMetricSender
     private String getMetric(SummariserRunningSample summariserRunningSample)
     {
         StringBuilder sb = new StringBuilder(100);
-        sb.append("application=" + INFLUX_APPLICATION + ",");
+        sb.append("herculesrun=" + INFLUX_HERCULESRUN + ",");
         sb.append("suite=" + INFLUX_TEST_SUITE + " ");
         JMeterContextService.ThreadCounts tc = JMeterContextService.getThreadCounts();
-        sb.append("ath=" + tc.activeThreads + ",");
-        sb.append("sth=" + tc.startedThreads + ",");
-        sb.append("eth=" + tc.finishedThreads + ",");
+        sb.append("activethr=" + tc.activeThreads + ",");
+        sb.append("startedthr=" + tc.startedThreads + ",");
+        sb.append("finishedthr=" + tc.finishedThreads + ",");
         sb.append("count=" + summariserRunningSample.getNumSamples() + ",");
         sb.append("min=" + summariserRunningSample.getMin() + ",");
         sb.append("avg=" + summariserRunningSample.getAverage() + ",");

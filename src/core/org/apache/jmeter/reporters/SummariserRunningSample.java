@@ -68,24 +68,24 @@ class SummariserRunningSample {
      * @param src the instance to copy
      */
     public SummariserRunningSample(SummariserRunningSample src) {
-        label = src.label;
-        counter = src.counter;
-        errorCount = src.errorCount;
-        startTime = src.startTime;
-        endTime = src.endTime;
-        max = src.max;
-        min = src.min;
-        runningSum = src.runningSum;
+        this.label = src.label;
+        this.counter = src.counter;
+        this.errorCount = src.errorCount;
+        this.startTime = src.startTime;
+        this.endTime = src.endTime;
+        this.max = src.max;
+        this.min = src.min;
+        this.runningSum = src.runningSum;
     }
 
     private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or final)
-        counter = 0L;
-        runningSum = 0L;
-        max = Long.MIN_VALUE;
-        min = Long.MAX_VALUE;
-        errorCount = 0L;
-        startTime = System.currentTimeMillis();
-        endTime = startTime;
+        this.counter = 0L;
+        this.runningSum = 0L;
+        this.max = Long.MIN_VALUE;
+        this.min = Long.MAX_VALUE;
+        this.errorCount = 0L;
+        this.startTime = System.currentTimeMillis();
+        this.endTime = this.startTime;
     }
 
     /**
@@ -100,17 +100,17 @@ class SummariserRunningSample {
      * @param rs {@link SummariserRunningSample}
      */
     public void addSample(SummariserRunningSample rs) {
-        counter += rs.counter;
-        errorCount += rs.errorCount;
-        runningSum += rs.runningSum;
-        if (max < rs.max) {
-            max = rs.max;
+        this.counter += rs.counter;
+        this.errorCount += rs.errorCount;
+        this.runningSum += rs.runningSum;
+        if (this.max < rs.max) {
+            this.max = rs.max;
         }
-        if (min > rs.min) {
-            min = rs.min;
+        if (this.min > rs.min) {
+            this.min = rs.min;
         }
         // We want end time to be current time so sample rates reflect real time
-        endTime = System.currentTimeMillis();
+        this.endTime = System.currentTimeMillis();
     }
 
     /**
@@ -118,18 +118,18 @@ class SummariserRunningSample {
      * @param res {@link SampleResult}
      */
     public void addSample(SampleResult res) {
-        counter += res.getSampleCount();
-        errorCount += res.getErrorCount();
+        this.counter += res.getSampleCount();
+        this.errorCount += res.getErrorCount();
         long aTimeInMillis = res.getTime();
-        runningSum += aTimeInMillis;
-        if (aTimeInMillis > max) {
-            max = aTimeInMillis;
+        this.runningSum += aTimeInMillis;
+        if (aTimeInMillis > this.max) {
+            this.max = aTimeInMillis;
         }
-        if (aTimeInMillis < min) {
-            min = aTimeInMillis;
+        if (aTimeInMillis < this.min) {
+            this.min = aTimeInMillis;
         }
         // We want end time to be current time so sample rates reflect real time
-        endTime = System.currentTimeMillis();
+        this.endTime = System.currentTimeMillis();
     }
 
     /**
@@ -140,7 +140,7 @@ class SummariserRunningSample {
      *         the {@link SummariserRunningSample} class.
      */
     public long getNumSamples() {
-        return counter;
+        return this.counter;
     }
 
     /**
@@ -149,10 +149,10 @@ class SummariserRunningSample {
      * @return how long the samples took
      */
     public long getElapsed() {
-        if (counter == 0) {
+        if (this.counter == 0) {
             return 0;// No samples collected ...
         }
-        return endTime - startTime;
+        return this.endTime - this.startTime;
     }
 
     /**
@@ -161,17 +161,17 @@ class SummariserRunningSample {
      * @return throughput associated to this sampler
      */
     public double getRate() {
-        if (counter == 0) {
+        if (this.counter == 0) {
             return 0.0;// No samples collected ...
         }
 
-        long howLongRunning = endTime - startTime;
+        long howLongRunning = this.endTime - this.startTime;
 
         if (howLongRunning == 0) {
             return Double.MAX_VALUE;
         }
 
-        return (double) counter / howLongRunning * 1000.0;
+        return (double) this.counter / howLongRunning * 1000.0;
     }
 
     /**
@@ -183,14 +183,14 @@ class SummariserRunningSample {
         if (counter == 0) {
             return 0;
         }
-        return runningSum / counter;
+        return this.runningSum / this.counter;
     }
 
     /**
      * @return errorCount
      */
     public long getErrorCount() {
-        return errorCount;
+        return this.errorCount;
     }
 
     /**
@@ -201,7 +201,7 @@ class SummariserRunningSample {
      *         have occurred.
      */
     public String getErrorPercentageString() {
-        return errorFormatter.format(getErrorPercentage());
+        return this.errorFormatter.format(getErrorPercentage());
     }
 
     /**
@@ -213,10 +213,10 @@ class SummariserRunningSample {
      *         that were recorded. Returns 0.0 if there are no samples
      */
     public double getErrorPercentage() {
-        if (counter == 0) {
+        if (this.counter == 0) {
             return 0.0;
         }
-        double rval = (double) errorCount / (double) counter;
+        double rval = (double) this.errorCount / (double) this.counter;
         return rval;
     }
 
@@ -226,7 +226,7 @@ class SummariserRunningSample {
      * @return the time in milliseconds of the slowest sample.
      */
     public long getMax() {
-        return max;
+        return this.max;
     }
 
     /**
@@ -235,14 +235,14 @@ class SummariserRunningSample {
      * @return the time in milliseconds of the quickest sample.
      */
     public long getMin() {
-        return min;
+        return this.min;
     }
 
     /**
      * Set end time
      */
     public void setEndTime() {
-        endTime = System.currentTimeMillis();
+        this.endTime = System.currentTimeMillis();
     }
 
 }
