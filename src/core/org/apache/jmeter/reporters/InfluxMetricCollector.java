@@ -3,6 +3,9 @@ package org.apache.jmeter.reporters;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterContextService.ThreadCounts;
+import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class InfluxMetricCollector
 {
@@ -10,6 +13,7 @@ class InfluxMetricCollector
     private final String suite;
     private final String herculesrunid;
 
+    static Logger log = LoggerFactory.getLogger(InfluxMetricCollector.class);
     public InfluxMetricCollector(String project, String suite)
     {
         this.herculesrunid = project;
@@ -34,12 +38,11 @@ class InfluxMetricCollector
             sb.append("Success");
         } else {
             sb.append("Failure");
+            sb.append(",failureresponse=").append(escapeTag(result.getResponseDataAsString()));
         }
         sb.append(",threadname=").append(escapeTag(result.getThreadName()));
 
         sb.append(",responsecode=").append(escapeResponceCode(result.getResponseCode()));
-
-       // sb.append(",failuremessage=").append(escapeTag(result.getAssertionResults()));
 
         sb.append(",responemessage=").append(escapeTag(result.getResponseMessage()));
 
