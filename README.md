@@ -9,7 +9,7 @@
 [![Stack Overflow](http://img.shields.io/:stack%20overflow-jmeter-brightgreen.svg)](http://stackoverflow.com/questions/tagged/jmeter)
 [![Twitter](https://img.shields.io/twitter/url/https/github.com/apache/jmeter.svg?style=social)](https://twitter.com/intent/tweet?text=Powerful%20load%20testing%20with%20Apache%20JMeter:&url=http://jmeter.apache.org)
 
-## What is it?
+## What is it?##
 
 Apache JMeter may be used to test performance both on static and dynamic resources, Web dynamic applications.
 It can be used to simulate a heavy load on a server, group of servers, network or object to test its strength or to analyze overall performance under different load types.
